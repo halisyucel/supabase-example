@@ -1,54 +1,29 @@
 import { NextPage } from 'next';
 import { FormEvent, useCallback, useState } from 'react';
-import axios from 'axios';
+import { useSupabaseClient } from '@supabase/auth-helpers-react';
+import { useRouter } from 'next/router';
+import Layout from '../../../components/Layout';
 
 const Signup: NextPage = () => {
-	const [firstName, setFirstName] = useState<string>('');
-	const [lastName, setLastName] = useState<string>('');
+	const router = useRouter();
+	const supabase = useSupabaseClient();
+
 	const [email, setEmail] = useState<string>('');
 	const [password, setPassword] = useState<string>('');
 	const [error, setError] = useState<string>('');
-	const handleSubmit = useCallback((e: FormEvent<HTMLFormElement>) => {
-		e.preventDefault();
-		axios({
-			method: 'POST',
-			url: '/api/auth/signup',
-			data: {
-				firstName,
-				lastName,
-				email,
-				password,
-			}
-		})
-			.then(({ data }) => {
-				console.log(data);
-			})
-			.catch(({ response }) => {
-				setError(response.data.error);
-			});
 
-	}, [firstName, lastName, email, password]);
+	const handleSubmit = useCallback(async (e: FormEvent<HTMLFormElement>) => {
+		e.preventDefault();
+		const { error } = await supabase.auth.signUp({ email, password });
+		if (error)
+			return setError(error.message);
+		await router.push('/');
+	}, [email, password, router, supabase.auth]);
+
 	return (
-		<div>
+		<Layout>
 			<h1>Sign up</h1>
-			<hr/>
 			<form onSubmit={handleSubmit}>
-				<label>
-					<input
-						type={'text'}
-						placeholder={'First name'}
-						value={firstName}
-						onChange={(e) => setFirstName(e.target.value)}
-					/>
-				</label>
-				<label>
-					<input
-						type={'text'}
-						placeholder={'Last name'}
-						value={lastName}
-						onChange={(e) => setLastName(e.target.value)}
-					/>
-				</label>
 				<label>
 					<input
 						type={'email'}
@@ -74,7 +49,7 @@ const Signup: NextPage = () => {
 			}}>
 				{error}
 			</div>
-		</div>
+		</Layout>
 	)
 }
 
